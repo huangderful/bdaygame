@@ -44,7 +44,13 @@ class LevelSelectScene extends Phaser.Scene {
             }).setOrigin(0.5);
 
             rect.on('pointerdown', () => {
-                const sceneMap = { 0: 'MiniGameDig', 1: 'MiniGameDraw', 2: 'MiniGameMath', 3: 'MiniGamePatience' };
+                const sceneMap = {
+                    0: 'MiniGameDig', 1: 'MiniGameDraw', 2: 'MiniGameMath', 3: 'MiniGamePatience',
+                    4: 'MiniGameQuickdraw', 5: 'MiniGameDodge', 6: 'MiniGameEcho', 7: 'MiniGameNeedle',
+                    8: 'MiniGameOrbit', 9: 'MiniGameTangle', 10: 'MiniGameFlood', 11: 'MiniGameGravity',
+                    12: 'MiniGameArena', 13: 'MiniGameSpinner', 14: 'MiniGameMirror', 15: 'MiniGameFog',
+                    16: 'MiniGameFuse', 17: 'MiniGameSteady', 18: 'MiniGameChain', 19: 'MiniGameTaliyah'
+                };
                 const target = sceneMap[i] || 'MiniGame';
                 this.scene.start(target, { levelIndex: i });
             });
