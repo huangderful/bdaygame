@@ -4,6 +4,17 @@ class TitleScene extends Phaser.Scene {
     create() {
         const cx = this.scale.width / 2;
 
+        // Schedule birthday notification for July 21 12:00 AM PST
+        try {
+            if (window.Native && window.Native.scheduleNotification) {
+                const target = new Date('2026-07-21T00:00:00-07:00').getTime();
+                const delay = Math.max(1000, target - Date.now());
+                if (delay > 1000) {
+                    window.Native.scheduleNotification('🎂 Happy Birthday!', 'Open your present...', delay);
+                }
+            }
+        } catch(e) { console.error(e); }
+
         this.add.text(cx, 200, 'The Webs Archive', {
             fontSize: '32px', color: '#ffffff', fontStyle: 'bold'
         }).setOrigin(0.5);

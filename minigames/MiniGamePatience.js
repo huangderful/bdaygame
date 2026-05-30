@@ -27,13 +27,10 @@ class MiniGamePatience extends Phaser.Scene {
         this.shadeShootDelay = 180; // frames between shots
         this.shadeResetDelay = 600; // full reset cycle length
         this.shootTimer = 60;       // initial shoot delay
-        this.resetTimer = 300;      // starts at 300, resets trigger when == 300
+        this.resetTimer = this.shadeResetDelay; // 600 - first drag at 300
         this.currentShot = 0;
         this.dragsToWin = 5;
         this.dragCount = 0;
-
-        // Immediately put shades in reset (matches frame 0 behavior)
-        this.firstFrame = true;
 
         // Player stats (from o_player/Create_0.gml)
         this.playerHp = 1000;
@@ -185,12 +182,6 @@ class MiniGamePatience extends Phaser.Scene {
         }
 
         // Reset timer (from o_patience/Step_0: decrement, check == 300 for reset, == 0 for chase)
-        if (this.firstFrame) {
-            // Frame 0: reset_delay starts at 300, which == 300, so shades reset immediately
-            for (const s of this.shades) { s.state = 'reset'; s.numResets++; }
-            this.dragCount++;
-            this.firstFrame = false;
-        }
         this.resetTimer--;
         if (this.resetTimer === 0) {
             // Shades start chasing, reset the timer
