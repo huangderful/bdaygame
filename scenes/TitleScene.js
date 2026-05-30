@@ -4,7 +4,7 @@ class TitleScene extends Phaser.Scene {
     create() {
         const cx = this.scale.width / 2;
 
-        this.add.text(cx, 200, 'aisufbnohweij', {
+        this.add.text(cx, 200, 'The Webs Archive', {
             fontSize: '32px', color: '#ffffff', fontStyle: 'bold'
         }).setOrigin(0.5);
 
