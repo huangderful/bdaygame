@@ -1,17 +1,19 @@
 class MiniGameMath extends Phaser.Scene {
     constructor() { super('MiniGameMath'); }
 
-    init(data) { this.levelIndex = data.levelIndex ?? 2; }
+    init(data) { this.levelIndex = data.levelIndex ?? 0; }
+
+    preload() { FeedbackFX.preload(this); }
 
     create() {
         const cx = this.scale.width / 2;
         this.correct = 0;
-        this.total = 15;
-        this.timeLimit = 15;
+        this.total = DevConfig.stages(22);
+        this.timeLimit = DevConfig.time(22);
         this.done = false;
-        this.startTime = this.time.now;
+        this.startTime = null; // stamped on first update tick (create-time clock can be stale)
 
-        this.add.text(cx, 40, 'MATH', { fontSize: '36px', color: '#e94560', fontStyle: 'bold' }).setOrigin(0.5);
+        this.add.text(cx, 40, 'MATH', { fontSize: '36px', color: '#e63030', fontStyle: 'bold' }).setOrigin(0.5);
         this.timerText = this.add.text(cx, 90, '', { fontSize: '18px', color: '#888' }).setOrigin(0.5);
         this.progressText = this.add.text(cx, 130, '', { fontSize: '16px', color: '#4ecca3' }).setOrigin(0.5);
         this.questionText = this.add.text(cx, 280, '', { fontSize: '40px', color: '#ffffff' }).setOrigin(0.5);
@@ -51,23 +53,27 @@ class MiniGameMath extends Phaser.Scene {
             const x = cx + (i % 2 === 0 ? -80 : 80);
             const y = 420 + Math.floor(i / 2) * 100;
             const btn = this.add.text(x, y, `${val}`, {
-                fontSize: '28px', color: '#1a1a2e', backgroundColor: '#e94560',
+                fontSize: '28px', color: '#ffffff', fontStyle: 'bold', backgroundColor: '#16213e',
                 padding: { x: 30, y: 15 }
             }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
-            btn.on('pointerdown', () => this.answer(val, answer));
+            btn.on('pointerdown', (p) => this.answer(val, answer, p.x, p.y));
             this.buttons.push(btn);
         });
     }
 
-    answer(picked, correct) {
+    answer(picked, correct, x, y) {
         if (this.done) return;
-        if (picked === correct) {
+        const isCorrect = picked === correct;
+        if (isCorrect) {
             this.correct++;
             this.feedbackText.setText('✓').setColor('#4ecca3');
+            FeedbackFX.playPositive(this);
         } else {
-            this.feedbackText.setText('✗').setColor('#e94560');
+            this.feedbackText.setText('✗').setColor('#e63030');
+            FeedbackFX.playNegative(this);
         }
+        FeedbackFX.fountain(this, x, y, isCorrect);
         this.time.delayedCall(200, () => { this.feedbackText.setText(''); });
 
         if (this.correct >= this.total) {
@@ -80,6 +86,7 @@ class MiniGameMath extends Phaser.Scene {
 
     update() {
         if (this.done) return;
+        if (this.startTime === null) this.startTime = this.time.now;
         const elapsed = (this.time.now - this.startTime) / 1000;
         const remaining = Math.max(0, this.timeLimit - elapsed);
         this.timerText.setText(`⏱ ${remaining.toFixed(1)}s`);
@@ -92,8 +99,8 @@ class MiniGameMath extends Phaser.Scene {
     showFailModal(msg) {
         const cx = this.scale.width / 2;
         this.buttons.forEach(b => b.destroy());
-        this.add.rectangle(cx, 422, 300, 200, 0x0f0f23, 0.95).setDepth(20).setStrokeStyle(2, 0xe94560);
-        this.add.text(cx, 380, msg, { fontSize: '18px', color: '#e94560' }).setOrigin(0.5).setDepth(21);
+        this.add.rectangle(cx, 422, 300, 200, 0x0f0f23, 0.95).setDepth(20).setStrokeStyle(2, 0xe63030);
+        this.add.text(cx, 380, msg, { fontSize: '18px', color: '#e63030' }).setOrigin(0.5).setDepth(21);
         this.add.text(cx, 430, '[ Retry ]', {
             fontSize: '20px', color: '#4ecca3', backgroundColor: '#16213e', padding: { x: 20, y: 8 }
         }).setOrigin(0.5).setDepth(21).setInteractive({ useHandCursor: true })
@@ -115,6 +122,6 @@ class MiniGameMath extends Phaser.Scene {
         this.questionText.setText('🧠 Done!');
         this.buttons.forEach(b => b.destroy());
         this.add.text(cx, 650, '✓ Page Unlocked!', { fontSize: '22px', color: '#4ecca3' }).setOrigin(0.5);
-        this.time.delayedCall(2000, () => this.scene.start('LevelSelect'));
+        this.time.delayedCall(1200, () => this.scene.start('PartReveal', { levelIndex: this.levelIndex }));
     }
 }

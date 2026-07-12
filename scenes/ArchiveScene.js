@@ -21,11 +21,11 @@ class ArchiveScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // Nav arrows
-        this.add.text(60, 400, '◀', { fontSize: '32px', color: '#e94560' })
+        this.add.text(60, 400, '◀', { fontSize: '32px', color: '#e63030' })
             .setOrigin(0.5).setInteractive({ useHandCursor: true })
             .on('pointerdown', () => this.flip(-1));
 
-        this.add.text(this.scale.width - 60, 400, '▶', { fontSize: '32px', color: '#e94560' })
+        this.add.text(this.scale.width - 60, 400, '▶', { fontSize: '32px', color: '#e63030' })
             .setOrigin(0.5).setInteractive({ useHandCursor: true })
             .on('pointerdown', () => this.flip(1));
 

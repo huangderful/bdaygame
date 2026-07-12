@@ -1,9 +1,10 @@
 class MiniGamePatience extends Phaser.Scene {
     constructor() { super('MiniGamePatience'); }
 
-    init(data) { this.levelIndex = data.levelIndex ?? 3; }
+    init(data) { this.levelIndex = data.levelIndex ?? 7; }
 
     preload() {
+        FeedbackFX.preload(this);
         this.load.image('shade', 'img/shade.png');
         this.load.image('player_spr', 'img/player.png');
         this.load.image('spike_blue', 'img/spike_blue.png');
@@ -29,12 +30,11 @@ class MiniGamePatience extends Phaser.Scene {
         this.shootTimer = 60;       // initial shoot delay
         this.resetTimer = this.shadeResetDelay; // 600 - first drag at 300
         this.currentShot = 0;
-        this.dragsToWin = 5;
+        this.dragsToWin = DevConfig.stages(5);
         this.dragCount = 0;
 
-        // Player stats (from o_player/Create_0.gml)
-        this.playerHp = 1000;
-        this.playerMaxHp = 1000;
+        // Player stats (from o_player/Create_0.gml) — double HP in dev for more chances
+        this.playerHp = this.playerMaxHp = DevConfig.on ? 2000 : 1000;
         this.playerDef = 40;
         this.playerSpeed = 5; // walk_speed ≈ 5px/frame at spd=60
         this.bleed = 0;
@@ -45,13 +45,13 @@ class MiniGamePatience extends Phaser.Scene {
 
         // Draw arena
         this.add.rectangle(this.arenaCx, this.arenaCy, this.arenaW, this.arenaH, 0x0a0a1a).setStrokeStyle(2, 0x4ecca3);
-        this.add.text(cx, 40, 'PATIENCE', { fontSize: '18px', color: '#e94560', fontStyle: 'bold' }).setOrigin(0.5);
+        this.add.text(cx, 40, 'PATIENCE', { fontSize: '18px', color: '#e63030', fontStyle: 'bold' }).setOrigin(0.5);
 
         // HP bar
         this.hpBarBg = this.add.rectangle(cx, this.arenaY + this.arenaH + 20, 300, 20, 0x333333);
         this.hpBarFill = this.add.rectangle(cx - 150, this.arenaY + this.arenaH + 20, 300, 18, 0x4ecca3).setOrigin(0, 0.5);
-        this.hpText = this.add.text(cx, this.arenaY + this.arenaH + 20, '1000 / 1000', { fontSize: '13px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
-        this.statusText = this.add.text(cx, this.arenaY + this.arenaH + 45, '', { fontSize: '12px', color: '#e94560' }).setOrigin(0.5);
+        this.hpText = this.add.text(cx, this.arenaY + this.arenaH + 20, `${this.playerMaxHp} / ${this.playerMaxHp}`, { fontSize: '13px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+        this.statusText = this.add.text(cx, this.arenaY + this.arenaH + 45, '', { fontSize: '12px', color: '#e63030' }).setOrigin(0.5);
 
         // Player
         this.player = this.add.sprite(this.arenaCx, this.arenaCy, 'player_spr').setDepth(5).setScale(3);
@@ -100,7 +100,7 @@ class MiniGamePatience extends Phaser.Scene {
         const padY = 500;
         const padH = 344; // fills to bottom (844 - 500)
         this.add.rectangle(195, padY + padH / 2, 390, padH, 0x000000).setDepth(19);
-        this.add.text(195, padY + 20, 'drag to move', { fontSize: '12px', color: '#444' }).setOrigin(0.5).setDepth(20);
+        this.add.text(195, padY + 26, 'drag to move', { fontSize: '18px', color: '#bbb' }).setOrigin(0.5).setDepth(20);
         this.trackDot = this.add.circle(195, padY + padH / 2, 10, 0x4ecca3, 0.5).setDepth(20).setVisible(false);
 
         // Global input - no zones
@@ -219,7 +219,7 @@ class MiniGamePatience extends Phaser.Scene {
         // Update HP bar
         const hpRatio = Math.max(0, this.playerHp / this.playerMaxHp);
         this.hpBarFill.width = 300 * hpRatio;
-        this.hpBarFill.setFillStyle(hpRatio > 0.5 ? 0x4ecca3 : hpRatio > 0.25 ? 0xffaa00 : 0xe94560);
+        this.hpBarFill.setFillStyle(hpRatio > 0.5 ? 0x4ecca3 : hpRatio > 0.25 ? 0xffaa00 : 0xe63030);
         this.hpText.setText(`${Math.ceil(this.playerHp)} / ${this.playerMaxHp}`);
 
         // Status effects display
@@ -255,6 +255,8 @@ class MiniGamePatience extends Phaser.Scene {
         if (condition === 'BLEED') this.bleed = 180; // 3 seconds of bleed
         if (condition === 'CURSE') this.curse = 300; // 5 seconds of curse
 
+        FeedbackFX.playNegative(this);
+
         if (window.Native) window.Native.vibrate(50);
     }
 
@@ -286,8 +288,8 @@ class MiniGamePatience extends Phaser.Scene {
         if (window.Native) window.Native.vibrate(200);
         this.player.setTint(0xff0000);
         const cx = 195, cy = 400;
-        this.add.rectangle(cx, cy, 280, 180, 0x0f0f23, 0.95).setDepth(30).setStrokeStyle(2, 0xe94560);
-        this.add.text(cx, cy - 40, '💀 Dead!', { fontSize: '22px', color: '#e94560' }).setOrigin(0.5).setDepth(31);
+        this.add.rectangle(cx, cy, 280, 180, 0x0f0f23, 0.95).setDepth(30).setStrokeStyle(2, 0xe63030);
+        this.add.text(cx, cy - 40, '💀 Dead!', { fontSize: '22px', color: '#e63030' }).setOrigin(0.5).setDepth(31);
         this.add.text(cx, cy - 10, `Survived ${Math.floor(this.frames / 60)}s`, { fontSize: '14px', color: '#888' }).setOrigin(0.5).setDepth(31);
         this.add.text(cx, cy + 25, '[ Retry ]', {
             fontSize: '18px', color: '#4ecca3', backgroundColor: '#16213e', padding: { x: 16, y: 8 }
@@ -300,6 +302,7 @@ class MiniGamePatience extends Phaser.Scene {
 
     win() {
         this.done = true;
+        FeedbackFX.playPositive(this);
         const levels = this.registry.get('levels') || [];
         levels[this.levelIndex].completed = true;
         this.registry.set('levels', levels);
@@ -307,6 +310,6 @@ class MiniGamePatience extends Phaser.Scene {
         this.add.text(195, 380, '✓ Patience complete!', { fontSize: '20px', color: '#4ecca3' }).setOrigin(0.5).setDepth(10);
         this.add.text(195, 420, `Survived ${Math.floor(this.frames / 60)}s`, { fontSize: '14px', color: '#888' }).setOrigin(0.5).setDepth(10);
         this.add.text(195, 450, '✓ Page Unlocked!', { fontSize: '18px', color: '#4ecca3' }).setOrigin(0.5).setDepth(10);
-        this.time.delayedCall(2000, () => this.scene.start('LevelSelect'));
+        this.time.delayedCall(1200, () => this.scene.start('PartReveal', { levelIndex: this.levelIndex }));
     }
 }
