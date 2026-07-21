@@ -28,7 +28,8 @@ class MiniGameGuess extends Phaser.Scene {
 
         this.add.text(cx, 30, 'GUESS THE CHAR', { fontSize: '20px', color: '#e63030', fontStyle: 'bold' }).setOrigin(0.5);
         this.timerText = this.add.text(cx, 58, '', { fontSize: '13px', color: '#888' }).setOrigin(0.5);
-        addExitButton(this);
+        // (exit button is a DOM element created in createInput — the full-screen
+        // input layer covers the Phaser canvas, so a canvas ✕ wouldn't be tappable)
         this.progressText = this.add.text(cx, 80, '', { fontSize: '13px', color: '#4ecca3' }).setOrigin(0.5);
         this.blanksText = this.add.text(cx, 120, '', { fontSize: '26px', color: '#ffffff', fontFamily: 'monospace' }).setOrigin(0.5);
         this.typedText = this.add.text(cx, 155, '', { fontSize: '16px', color: '#4ecca3', fontFamily: 'monospace' }).setOrigin(0.5);
@@ -87,9 +88,39 @@ class MiniGameGuess extends Phaser.Scene {
         inp.autocomplete = 'off';
         inp.autocapitalize = 'none';
         inp.setAttribute('autocorrect', 'off');
-        inp.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px;pointer-events:none;';
+        // The input IS a full-screen transparent layer so a real tap lands
+        // directly on it — Android only raises the IME for a genuine tap on a
+        // focusable field, not for a programmatic .focus(). Text is invisible
+        // (transparent color/caret) and 16px to avoid mobile auto-zoom.
+        inp.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;' +
+            'opacity:0.01;border:0;padding:0;margin:0;font-size:16px;' +
+            'background:transparent;color:transparent;caret-color:transparent;' +
+            'z-index:9999;-webkit-user-select:text;';
         document.body.appendChild(inp);
         this.hiddenInput = inp;
+
+        // Belt-and-suspenders: also re-focus + native-assist on its own tap.
+        this.onDomTouch = () => {
+            if (this.done || !this.hiddenInput) return;
+            try { this.hiddenInput.focus({ preventScroll: true }); } catch (e) {}
+            if (window.Native && window.Native.showKeyboard) window.Native.showKeyboard();
+        };
+        inp.addEventListener('touchstart', this.onDomTouch);
+        inp.addEventListener('mousedown', this.onDomTouch);
+
+        // The full-screen input covers the Phaser canvas, so the in-game ✕ can't
+        // be tapped — add a DOM exit button on top of it.
+        const exitBtn = document.createElement('div');
+        exitBtn.id = 'guess-exit-btn';
+        exitBtn.textContent = '✕ exit';
+        exitBtn.style.cssText = 'position:fixed;top:8px;left:8px;z-index:10000;' +
+            'color:#fff;font:16px sans-serif;padding:8px 12px;background:rgba(0,0,0,0.5);' +
+            'border-radius:6px;';
+        document.body.appendChild(exitBtn);
+        this.exitBtn = exitBtn;
+        this.onExitTap = (e) => { e.preventDefault(); e.stopPropagation(); this.scene.start('LevelSelect'); };
+        exitBtn.addEventListener('touchstart', this.onExitTap);
+        exitBtn.addEventListener('mousedown', this.onExitTap);
 
         this.onDomInput = () => {
             const chars = inp.value;
@@ -138,9 +169,18 @@ class MiniGameGuess extends Phaser.Scene {
         if (this.hiddenInput) {
             this.hiddenInput.removeEventListener('input', this.onDomInput);
             this.hiddenInput.removeEventListener('keydown', this.onDomKeyDown);
+            this.hiddenInput.removeEventListener('touchstart', this.onDomTouch);
+            this.hiddenInput.removeEventListener('mousedown', this.onDomTouch);
             this.hiddenInput.blur();
             this.hiddenInput.remove();
             this.hiddenInput = null;
+        }
+        this.onDomTouch = null;
+        if (this.exitBtn) {
+            this.exitBtn.removeEventListener('touchstart', this.onExitTap);
+            this.exitBtn.removeEventListener('mousedown', this.onExitTap);
+            this.exitBtn.remove();
+            this.exitBtn = null;
         }
         if (window.Native && window.Native.hideKeyboard) window.Native.hideKeyboard();
     }

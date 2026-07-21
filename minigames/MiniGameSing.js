@@ -326,13 +326,35 @@ class MiniGameSing extends Phaser.Scene {
         this.add.rectangle(cx, 422, 300, 200, 0x0f0f23, 0.95).setDepth(20).setStrokeStyle(2, 0xe63030);
         this.add.text(cx, 380, msg, { fontSize: '18px', color: '#e63030', align: 'center', wordWrap: { width: 260 } })
             .setOrigin(0.5).setDepth(21);
-        this.add.text(cx, 430, '[ Retry ]', {
+        // Re-request microphone access, then restart the scene on grant.
+        this.add.text(cx, 430, '[ Allow microphone ]', {
+            fontSize: '18px', color: '#1a1a2e', backgroundColor: '#4ecca3', padding: { x: 16, y: 8 }
+        }).setOrigin(0.5).setDepth(21).setInteractive({ useHandCursor: true })
+            .on('pointerdown', () => this.requestMic());
+        this.add.text(cx, 478, '[ Retry ]', {
             fontSize: '20px', color: '#4ecca3', backgroundColor: '#16213e', padding: { x: 20, y: 8 }
         }).setOrigin(0.5).setDepth(21).setInteractive({ useHandCursor: true })
             .on('pointerdown', () => this.scene.restart({ levelIndex: this.levelIndex }));
-        this.add.text(cx, 480, '[ Back ]', { fontSize: '18px', color: '#888' })
+        this.add.text(cx, 522, '[ Back ]', { fontSize: '18px', color: '#888' })
             .setOrigin(0.5).setDepth(21).setInteractive({ useHandCursor: true })
             .on('pointerdown', () => this.scene.start('LevelSelect'));
+
+        // If the native re-request grants access, jump straight back in.
+        this.onMicResult = (e) => {
+            if (e && e.detail && e.detail.granted) this.scene.restart({ levelIndex: this.levelIndex });
+        };
+        window.addEventListener('micPermissionResult', this.onMicResult);
+        this.events.once('shutdown', () => window.removeEventListener('micPermissionResult', this.onMicResult));
+        this.events.once('destroy', () => window.removeEventListener('micPermissionResult', this.onMicResult));
+    }
+
+    requestMic() {
+        if (window.Native && window.Native.requestMic) {
+            window.Native.requestMic();
+        } else {
+            // Desktop / no bridge: just re-attempt via a scene restart.
+            this.scene.restart({ levelIndex: this.levelIndex });
+        }
     }
 
     win() {
