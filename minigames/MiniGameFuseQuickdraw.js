@@ -49,6 +49,14 @@ class MiniGameFuseQuickdraw extends Phaser.Scene {
 
         this.input.on('pointerdown', () => this.onPointerDown());
 
+        // Spacebar interacts too (cut the fuse / react on the quickdraw).
+        this.onSpace = (e) => {
+            if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); this.onPointerDown(); }
+        };
+        this.input.keyboard.on('keydown', this.onSpace);
+        this.events.once('shutdown', () => this.input.keyboard.off('keydown', this.onSpace));
+        this.events.once('destroy', () => this.input.keyboard.off('keydown', this.onSpace));
+
         this.nextFuse();
     }
 
