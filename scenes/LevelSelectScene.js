@@ -96,15 +96,27 @@ class LevelSelectScene extends Phaser.Scene {
             });
         }
 
-        // Pagination — swipe to browse (arrows are hints, not buttons)
+        // Pagination — swipe OR tap the arrows to browse.
         this.add.text(cx, 726, `${this.page + 1} / ${this.totalPages}`, {
             fontSize: '16px', color: '#888'
         }).setOrigin(0.5);
-        const left = this.page > 0 ? '◀' : ' ';
-        const right = this.page < this.totalPages - 1 ? '▶' : ' ';
-        this.add.text(cx, 754, `${left}   swipe   ${right}`, {
-            fontSize: '15px', color: '#666'
-        }).setOrigin(0.5);
+        this.add.text(cx, 754, 'swipe', { fontSize: '15px', color: '#666' }).setOrigin(0.5);
+        if (this.page > 0) {
+            this.add.text(cx - 70, 754, '◀', { fontSize: '22px', color: '#e63030' })
+                .setOrigin(0.5).setInteractive({ useHandCursor: true })
+                .on('pointerdown', (p, lx, ly, event) => {
+                    event.stopPropagation();
+                    this.page--; this.savePage(); this.drawPage();
+                });
+        }
+        if (this.page < this.totalPages - 1) {
+            this.add.text(cx + 70, 754, '▶', { fontSize: '22px', color: '#e63030' })
+                .setOrigin(0.5).setInteractive({ useHandCursor: true })
+                .on('pointerdown', (p, lx, ly, event) => {
+                    event.stopPropagation();
+                    this.page++; this.savePage(); this.drawPage();
+                });
+        }
 
         this.add.text(cx, 790, '[ Back ]', { fontSize: '20px', color: '#888' })
             .setOrigin(0.5).setInteractive({ useHandCursor: true })
