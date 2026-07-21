@@ -12,7 +12,7 @@ class MiniGameFuseQuickdraw extends Phaser.Scene {
         const cx = 195;
         this.done = false;
         this.THRESHOLD = DevConfig.on ? 500 : 262;   // ms reaction threshold for quickdraw
-        this.totalFuses = DevConfig.stages(5);
+        this.totalFuses = DevConfig.stages(7);
         this.fuseNum = 0;
 
         // Dev-mode extra chances: a would-be loss consumes a miss while any remain.
