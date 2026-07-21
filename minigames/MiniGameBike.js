@@ -57,12 +57,22 @@ class MiniGameBike extends Phaser.Scene {
         // --- Swipe-phase UI ---
         this.arrowGraphics = this.add.graphics().setDepth(6);
         this.swipeText = this.add.text(cx, 180, '', { fontSize: '24px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
-        this.swipeHint = this.add.text(cx, 640, 'Swipe the way the arrow points!', { fontSize: '15px', color: '#888' }).setOrigin(0.5);
+        this.swipeHint = this.add.text(cx, 640, 'Swipe (or arrow-key) the way the arrow points!', { fontSize: '14px', color: '#888' }).setOrigin(0.5);
 
         // --- Input (dispatched by phase) ---
         this.input.on('pointerdown', (p) => this.onPointerDown(p));
         this.input.on('pointermove', (p) => this.onPointerMove(p));
         this.input.on('pointerup', (p) => this.onPointerUp(p));
+
+        // Arrow keys also steer during the swipe phase.
+        this.onArrowKey = (e) => {
+            const map = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
+            const dir = map[e.key];
+            if (dir) { e.preventDefault(); this.applyDirection(dir); }
+        };
+        this.input.keyboard.on('keydown', this.onArrowKey);
+        this.events.once('shutdown', () => this.input.keyboard.off('keydown', this.onArrowKey));
+        this.events.once('destroy', () => this.input.keyboard.off('keydown', this.onArrowKey));
 
         this.updateCounter();
         this.startCycle();
@@ -252,8 +262,13 @@ class MiniGameBike extends Phaser.Scene {
 
     // ---------- Swipe phase ----------
     evaluateSwipe(dx, dy) {
-        const dir = this.resolveSwipe(dx, dy);
-        if (!dir) return; // too short — ignore, wait for a real swipe
+        this.applyDirection(this.resolveSwipe(dx, dy));
+    }
+
+    // Shared by swipes and arrow keys.
+    applyDirection(dir) {
+        if (this.done || this.phase !== 'swipe') return;
+        if (!dir) return; // too short / no direction — wait for a real input
         if (dir === this.swipeDirs[this.swipeIndex]) {
             this.swipeIndex++;
             if (this.swipeIndex >= this.swipeCounts[this.cycleIndex]) {
